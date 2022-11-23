@@ -16,6 +16,7 @@ class ProjectResourceBasic extends JsonResource
     {
         return [
             'slug' => $this->slug,
+            'technologies' => $this->technologies->pluck('title'),
             'title' => $this->title,
             'image' => $this->image('image'),
             'image_lqpi' => $this->lowQualityImagePlaceholder('image')

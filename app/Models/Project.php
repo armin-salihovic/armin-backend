@@ -54,4 +54,9 @@ class Project extends Model implements Sortable
             ],
         ],
     ];
+
+    public function technologies()
+    {
+        return $this->hasMany(ProjectTechnology::class)->orderBy('position');
+    }
 }

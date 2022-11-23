@@ -28,6 +28,19 @@ class ProjectRepository extends ModuleRepository
         return $news->get();
     }
 
+    public function afterSave($object, $fields)
+    {
+        $this->updateRepeater($object, $fields, 'technologies', 'ProjectTechnology', 'project-technology');
+        parent::afterSave($object, $fields);
+    }
+
+    public function getFormFields($object)
+    {
+        $fields = parent::getFormFields($object);
+        $fields = $this->getFormFieldsForRepeater($object, $fields, 'technologies', 'ProjectTechnology', 'project-technology');
+        return $fields;
+    }
+
 //    public function featuredProject()
 //    {
 //        return $this->model

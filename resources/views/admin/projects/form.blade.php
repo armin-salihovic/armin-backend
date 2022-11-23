@@ -13,7 +13,9 @@
         'required' => true,
     ])
 
+    @formField('repeater', ['type' => 'project-technology'])
+
     @formField('block_editor', [
-        'blocks' => ['paragraph', 'article-title', 'article-image']
+        'blocks' => ['paragraph', 'article-title', 'article-image', 'article-introduction']
     ])
 @stop
