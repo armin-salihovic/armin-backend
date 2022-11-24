@@ -16,6 +16,6 @@
     @formField('repeater', ['type' => 'project-technology'])
 
     @formField('block_editor', [
-        'blocks' => ['paragraph', 'article-title', 'article-image', 'article-introduction']
+        'blocks' => ['paragraph', 'article-title', 'article-image', 'article-introduction', 'article-hero-image']
     ])
 @stop

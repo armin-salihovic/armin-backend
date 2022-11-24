@@ -14,6 +14,6 @@
     ])
 
     @formField('block_editor', [
-        'blocks' => ['paragraph', 'article-title', 'article-image']
+        'blocks' => ['paragraph', 'article-title', 'article-image', 'article-introduction', 'article-hero-image']
     ])
 @stop
