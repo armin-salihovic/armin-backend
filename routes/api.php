@@ -17,12 +17,10 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
-    return $request->user();
+Route::domain(config('app.url'))->group(function () {
+    Route::get('projects', [ProjectController::class, 'index']);
+    Route::get('projects/{slug}', [ProjectController::class, 'show']);
+    Route::post('send-email', [MailController::class, 'sendEmail']);
+    Route::get('settings', [PageController::class, 'getSettings']);
+    Route::get('{slug}', [PageController::class, 'show']);
 });
-
-Route::get('projects', [ProjectController::class, 'index']);
-Route::get('projects/{slug}', [ProjectController::class, 'show']);
-Route::post('send-email', [MailController::class, 'sendEmail']);
-Route::get('settings', [PageController::class, 'getSettings']);
-Route::get('{slug}', [PageController::class, 'show']);

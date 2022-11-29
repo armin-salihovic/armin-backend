@@ -4,7 +4,9 @@
     @formField('input', [
         'name' => 'description',
         'label' => 'Description',
-        'maxlength' => 100
+        'type' => 'textarea',
+        'rows' => 2,
+        'maxlength' => 200,
     ])
 
     @formField('medias', [

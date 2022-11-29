@@ -22,6 +22,9 @@
     @formField('input', [
         'label' => 'Global Description',
         'name' => 'global_description',
+        'type' => 'textarea',
+        'rows' => 2,
+        'maxlength' => 200,
     ])
 @stop
 
@@ -66,6 +69,9 @@
         @formField('input', [
             'label' => 'Home meta description',
             'name' => 'home_meta_description',
+            'type' => 'textarea',
+            'rows' => 2,
+            'maxlength' => 200,
         ])
 
         @formField('medias', [
@@ -90,6 +96,9 @@
     @formField('input', [
         'label' => 'Projects meta description',
         'name' => 'projects_meta_description',
+        'type' => 'textarea',
+        'rows' => 2,
+        'maxlength' => 200,
     ])
 
     @formField('medias', [
@@ -114,6 +123,9 @@
     @formField('input', [
         'label' => 'About meta description',
         'name' => 'about_meta_description',
+        'type' => 'textarea',
+        'rows' => 2,
+        'maxlength' => 200,
     ])
 
     @formField('medias', [
@@ -138,6 +150,9 @@
     @formField('input', [
         'label' => 'Contact meta description',
         'name' => 'contact_meta_description',
+        'type' => 'textarea',
+        'rows' => 2,
+        'maxlength' => 200,
     ])
 
     @formField('medias', [
