@@ -9,4 +9,16 @@ return [
         'title' => 'Pages',
         'module' => true,
     ],
+    'settings' => [
+        'title' => 'Settings',
+        'route' => 'admin.settings',
+        'params' => ['section' => 'settings'],
+        'primary_navigation' => [
+            'settings' => [
+                'title' => 'Settings',
+                'route' => 'admin.settings',
+                'params' => ['section' => 'settings']
+            ],
+        ]
+    ],
 ];

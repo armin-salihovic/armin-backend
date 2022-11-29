@@ -38,6 +38,12 @@ class Project extends Model implements Sortable
                     'ratio' => 1,
                 ],
             ],
+            'og' => [
+                [
+                    'name' => 'default',
+                    'ratio' => 1.91/1.0,
+                ],
+            ],
             'flexible' => [
                 [
                     'name' => 'free',

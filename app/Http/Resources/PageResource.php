@@ -16,11 +16,6 @@ class PageResource extends JsonResource
     {
         return [
             'title' => $this->title,
-            'image' => $this->image('image'),
-            'image_lqpi' => $this->lowQualityImagePlaceholder('image'),
-            'image_mobile' => $this->image('image', 'mobile'),
-            'image_mobile_lqpi' => $this->lowQualityImagePlaceholder('image', 'mobile'),
-            'description' => $this->description,
             'content' => $this->renderBlocks()
         ];
     }

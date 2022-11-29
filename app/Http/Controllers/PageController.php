@@ -2,10 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use A17\Twill\Models\Setting;
 use App\Http\Resources\PageResource;
-use App\Models\Page;
+use App\Http\Resources\SettingsResource;
 use App\Repositories\PageRepository;
-use Illuminate\Http\Request;
+use App\Services\Settings;
 
 class PageController extends Controller
 {
@@ -14,17 +15,21 @@ class PageController extends Controller
         $this->repository = $repository;
     }
 
-//    function index()
-//    {
-//        return PageResourceBasic::collection($this->repository->allPages());
-//    }
-
     function show($slug)
     {
         $project = $this->repository->forSlug($slug);
 
-        if($project === null) return response(null,404);
+        if ($project === null) return response(null, 404);
 
         return new PageResource($project);
+    }
+
+    function getSettings()
+    {
+        $settings = Setting::where('section', 'settings')
+            ->join('setting_translations', 'settings.id', '=', 'setting_translations.setting_id')
+            ->pluck('value', 'key');
+
+        return new SettingsResource(new Settings($settings));
     }
 }
