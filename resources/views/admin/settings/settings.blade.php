@@ -9,6 +9,11 @@
 ]])
 
 @section('contentFields')
+    @formField('medias', [
+        'name' => 'favicon',
+        'label' => 'Favicon',
+    ])
+
     @formField('input', [
         'label' => 'Global Title',
         'name' => 'global_title',

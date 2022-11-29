@@ -22,6 +22,7 @@ class SettingsResource extends JsonResource
     public function toArray($request)
     {
         return [
+            'favicon' => $this->image('favicon'),
             'social_github' => $this->social_github,
             'social_linkedin' => $this->social_linkedin,
             'social_discord' => $this->social_discord,
