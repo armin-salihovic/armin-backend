@@ -27,7 +27,7 @@ class SettingsResource extends JsonResource
             'social_linkedin' => $this->social_linkedin,
             'social_discord' => $this->social_discord,
             'social_email' => $this->social_email,
-            'home_meta_title' => $this->createTitle($this->home_meta_title),
+            'home_meta_title' => $this->home_meta_title,
             'home_meta_description' => $this->home_meta_description,
             'home_og' => $this->socialImage('home_og'),
             'projects_meta_title' => $this->createTitle($this->projects_meta_title),

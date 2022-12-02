@@ -1,4 +1,4 @@
-@twillBlockTitle('Article')
+@twillBlockTitle('Article Title')
 @twillBlockIcon('text')
 
 @formField('input', [
