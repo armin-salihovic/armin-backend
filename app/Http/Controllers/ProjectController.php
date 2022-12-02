@@ -24,7 +24,7 @@ class ProjectController extends Controller
     {
         $project = $this->repository->forSlug($slug);
 
-        if($project === null) return response(null,404);
+        if($project === null) return response()->json([], 404);
 
         return new ProjectResource($project);
     }
