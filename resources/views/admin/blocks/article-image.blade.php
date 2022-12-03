@@ -6,3 +6,8 @@
     'label' => 'Image',
 ])
 
+@formField('checkbox', [
+    'name' => 'frame',
+    'label' => 'Frame'
+])
+
