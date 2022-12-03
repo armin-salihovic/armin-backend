@@ -1,6 +1,9 @@
 <?php
 
 return [
+    'block_editor' => [
+        'files' => ['single_file']
+    ],
     'settings' => [
         'crops' => [
             'logo' => [

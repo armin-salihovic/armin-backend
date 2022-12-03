@@ -1,5 +1,5 @@
 <x-block-layout>
-    <div class="title flex grid grid-cols-6">
+    <div class="title pb-8 md:pb-16 flex grid grid-cols-6">
         <aside class="md:col-span-2 col-span-6">
             <h3 class="text-lg md:text-5xl">{!! $block->input('year') !!}</h3>
         </aside>

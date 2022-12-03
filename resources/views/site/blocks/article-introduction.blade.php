@@ -1,5 +1,5 @@
 <x-block-layout>
-    <div class="flex py-16 grid grid-cols-6 text-base md:text-lg gap-4">
+    <div class="flex pb-8 md:pb-16 grid grid-cols-6 text-base md:text-lg gap-4">
         <aside class="md:col-span-2 col-span-6">
             <h4 class="font-bold">Introduction</h4>
             @foreach($block->blockable->technologies as $technology)
