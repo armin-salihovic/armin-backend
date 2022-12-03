@@ -1,6 +1,12 @@
 @twillBlockTitle('Article Introduction')
 @twillBlockIcon('text')
 
+@formField('input', [
+    'name' => 'title',
+    'label' => 'Title',
+    'maxlength' => 100
+])
+
 @formField('wysiwyg', [
     'name' => 'paragraph',
     'label' => 'Text',

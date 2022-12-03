@@ -1,7 +1,7 @@
 <x-block-layout>
     <div class="flex pb-8 md:pb-16 grid grid-cols-6 text-base md:text-lg gap-4">
         <aside class="md:col-span-2 col-span-6">
-            <h4 class="font-bold">Introduction</h4>
+            <h4 class="font-bold">{{ $block->input('title') }}</h4>
             @foreach($block->blockable->technologies as $technology)
                 <h4 class="text-gray-500">
                     {{ $technology->title }}
