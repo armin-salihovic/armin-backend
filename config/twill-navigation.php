@@ -9,6 +9,10 @@ return [
         'title' => 'Pages',
         'module' => true,
     ],
+    'cvs' => [
+        'title' => 'Cvs',
+        'route' => 'admin.cvs',
+    ],
     'settings' => [
         'title' => 'Settings',
         'route' => 'admin.settings',

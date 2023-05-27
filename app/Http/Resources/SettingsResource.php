@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Models\Cv;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 class SettingsResource extends JsonResource
@@ -39,6 +40,7 @@ class SettingsResource extends JsonResource
             'contact_meta_title' => $this->createTitle($this->contact_meta_title),
             'contact_meta_description' => $this->contact_meta_description,
             'contact_og' => $this->socialImage('contact_og'),
+            'cv' => Cv::getCv(),
         ];
     }
 }
