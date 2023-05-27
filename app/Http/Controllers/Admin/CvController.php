@@ -17,6 +17,13 @@ class CvController extends BaseModuleController
     {
         abort_unless($cv = CV::first(), 500, 'CV record missing');
 
-        return view('admin.cvs.form',  $this->form($cv->id));
+        $form = $this->form($cv->id);
+
+        $cache = uniqid();
+
+        $form['item']['trigger'] = $cache;
+        $form['form_fields']['trigger'] = $cache;
+
+        return view('admin.cvs.form', $form);
     }
 }

@@ -2,7 +2,11 @@
 
 namespace App\Providers;
 
+use A17\Twill\Models\Translations\SettingTranslation;
 use App\Jobs\RefreshLQIP;
+use App\Models\Cv;
+use App\Observers\CvObserver;
+use App\Observers\SettingTranslationObserver;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Auth\Listeners\SendEmailVerificationNotification;
 use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;
@@ -31,6 +35,9 @@ class EventServiceProvider extends ServiceProvider
         Event::listen('cms-module.saved', function () {
             RefreshLQIP::dispatch();
         });
+
+        SettingTranslation::observe(SettingTranslationObserver::class);
+        Cv::observe(CvObserver::class);
     }
 
     /**

@@ -13,6 +13,7 @@ class Cv extends Model
 
     protected $fillable = [
         'title',
+        'trigger',
     ];
 
     protected $indexOptions = ['publish' => false];
