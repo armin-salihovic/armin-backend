@@ -18,6 +18,13 @@
     @formField('repeater', ['type' => 'project-technology'])
 
     @formField('block_editor', [
-        'blocks' => ['paragraph', 'article-title', 'article-image', 'article-introduction', 'article-hero-image']
+        'blocks' => [
+            'paragraph',
+            'article-title',
+            'article-image',
+            'article-introduction',
+            'article-hero-image',
+            'article-hero-image-no-lazy',
+        ]
     ])
 @stop
