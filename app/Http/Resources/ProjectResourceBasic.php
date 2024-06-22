@@ -19,7 +19,10 @@ class ProjectResourceBasic extends JsonResource
             'technologies' => $this->technologies->pluck('title'),
             'title' => $this->title,
             'image' => $this->image('image', 'default', ['w' => 910]),
-            'image_lqpi' => $this->lowQualityImagePlaceholder('image')
+            'image_mobile' => $this->image('image', 'mobile'),
+            'image_lqpi' => $this->lowQualityImagePlaceholder('image'),
+            'image_lqpi_mobile' => $this->lowQualityImagePlaceholder('image', 'mobile'),
+            'aspect_ratio' => $this->getAspectRatioFormatted('image'),
         ];
     }
 }

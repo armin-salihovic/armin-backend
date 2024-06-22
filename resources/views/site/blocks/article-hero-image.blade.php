@@ -15,13 +15,32 @@
             $backgroundPosition = 'bg-position-bottom';
             break;
     }
+
+    $width = $block->imageAsArray('image')['width'];
+    $height = $block->imageAsArray('image')['height'];
 @endphp
 
 <div class="mb-10 3xl:mb-12 4xl:mb-20">
-    <figure class="hidden xs:block img-container mb-3 3xl:mb-4 4xl:mb-6 {{ $backgroundPosition }}" style="background-image:url('{{ $block->lowQualityImagePlaceholder('image') }}');">
-        <img class="lazyload blur-up w-full bg-center absolute {{ $objectPosition }}" src="{{ $block->image('image') }}" data-src="{{ $block->image('image') }}" alt="{{ $block->imageAltText('image') }}">
-    </figure>
-    <figure class="block xs:hidden img-container image-square mb-3" style="background-image:url('{{ $block->lowQualityImagePlaceholder('image', 'mobile') }}');">
-        <img class="lazyload blur-up w-full bg-center absolute bg-position-top" src="{{ $block->image('image', 'mobile') }}" data-src="{{ $block->image('image', 'mobile') }}" alt="{{ $block->imageAltText('image') }}">
-    </figure>
+    <div class="hidden xs:block mb-3 3xl:mb-4 4xl:mb-6">
+        <x-lazy-loading-wrapper class="{{ $backgroundPosition }}" :lqip="$block->lowQualityImagePlaceholder('image')">
+            <img
+                src="{{ $block->image('image') }}"
+                alt="{{ $block->imageAltText('image') }}"
+                loading="lazy"
+                class="bg-center {{ $objectPosition }}"
+                style="aspect-ratio: {{ "$width/$height" }};"
+            >
+        </x-lazy-loading-wrapper>
+    </div>
+    <div class="block xs:hidden image-square mb-3">
+        <x-lazy-loading-wrapper :lqip="$block->lowQualityImagePlaceholder('image', 'mobile')">
+            <img
+                src="{{ $block->image('image', 'mobile') }}"
+                alt="{{ $block->image('image', 'mobile') }}"
+                style="aspect-ratio: 1/1;"
+                loading="lazy"
+                class="bg-center bg-position-top"
+            >
+        </x-lazy-loading-wrapper>
+    </div>
 </div>

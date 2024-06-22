@@ -65,4 +65,11 @@ class Project extends Model implements Sortable
     {
         return $this->hasMany(ProjectTechnology::class)->orderBy('position');
     }
+
+    public function getAspectRatioFormatted(string $role, string $crop = 'default'): string
+    {
+        $width = $this->imageAsArray($role, $crop)['width'];
+        $height = $this->imageAsArray($role, $crop)['height'];
+        return "$width/$height";
+    }
 }
