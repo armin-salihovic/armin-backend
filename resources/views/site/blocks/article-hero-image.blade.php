@@ -27,7 +27,7 @@
                 src="{{ $block->image('image') }}"
                 alt="{{ $block->imageAltText('image') }}"
                 loading="lazy"
-                class="bg-center {{ $objectPosition }}"
+                class="hero-img bg-center {{ $objectPosition }}"
                 style="aspect-ratio: {{ "$width/$height" }};"
             >
         </x-lazy-loading-wrapper>
@@ -39,7 +39,7 @@
                 alt="{{ $block->image('image', 'mobile') }}"
                 style="aspect-ratio: 1/1;"
                 loading="lazy"
-                class="bg-center bg-position-top"
+                class="hero-img bg-center bg-position-top"
             >
         </x-lazy-loading-wrapper>
     </div>
