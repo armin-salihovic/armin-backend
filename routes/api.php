@@ -18,6 +18,22 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
+Route::get('robots.txt', function () {
+    $subdomain = \Illuminate\Support\Arr::first(explode('.', request()->getHost()));
+
+    $robotsFile = public_path('robots-api.txt');
+
+    if ($subdomain === 'admin') {
+        $robotsFile = public_path('robots-admin.txt');
+    }
+
+    return response(
+        file_get_contents(
+            $robotsFile
+        ), 200)
+        ->header('Content-Type', 'text/plain');
+});
+
 Route::domain(config('app.url'))->group(function () {
     Route::get('cache', function() {
         $cache = Cache::first();
@@ -29,5 +45,4 @@ Route::domain(config('app.url'))->group(function () {
     Route::post('send-email', [MailController::class, 'sendEmail']);
     Route::get('settings', [PageController::class, 'getSettings']);
     Route::get('{slug}', [PageController::class, 'show']);
-
 });
