@@ -98,6 +98,7 @@ php artisan twill:lqip
 - Docker volumes persist `storage/` and `database/sqlite/`; production HTTPS is expected to be handled by a server-level reverse proxy such as Caddy, Traefik, Nginx Proxy Manager, or host Nginx/Certbot.
 - Route caching is intentionally not used in the Docker entrypoint because `routes/api.php` and `routes/web.php` currently contain closure routes.
 - The Docker entrypoint fails fast when `APP_KEY` is missing; it intentionally does not auto-generate keys because production keys must remain stable across restarts/deployments.
+- Worker services override `RUN_MIGRATIONS=false` and `RUN_SEEDERS=false` so only the app service performs startup database bootstrap against SQLite.
 
 ## Repository / Remote
 

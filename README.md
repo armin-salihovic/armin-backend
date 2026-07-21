@@ -96,6 +96,8 @@ The entrypoint automatically creates the SQLite file at:
 
 and runs migrations when `RUN_MIGRATIONS=true`.
 
+Only the `app` service should run migrations/seeders at startup. The `worker` service explicitly overrides `RUN_MIGRATIONS=false` and `RUN_SEEDERS=false` so it does not race the app container while using the same SQLite database.
+
 ### Seeding
 
 The default Docker environment does **not** run seeders automatically:

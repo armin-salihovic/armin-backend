@@ -27,6 +27,7 @@ Docker/Compose deployment support has been added for the Laravel/Twill backend u
 - Docker keeps the app stack lightweight by avoiding MySQL/Postgres/Redis containers.
 - Keep `docker-compose.yml` for local builds/tests and `docker-compose.prod.yml` for server deployments with prebuilt images.
 - The queue worker remains part of Compose because Twill save events dispatch queued LQIP refresh jobs and the queue uses the SQLite-backed database driver.
+- Worker services must not run migrations/seeders; Compose overrides disable them to avoid SQLite migration races with the app service.
 - Route caching should not be enabled until closure routes are refactored to controller methods.
 - `APP_KEY` should be generated once and set in `.env.docker`; the entrypoint should fail fast if it is missing rather than generating a new production key.
 

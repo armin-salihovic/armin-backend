@@ -30,6 +30,7 @@ Memory Bank has been initialized based on the current Laravel/Twill backend stru
 - Docker entrypoint now refuses startup when `APP_KEY` is missing to avoid unsafe automatic production key generation.
 - Production Compose deployment now uses `docker-compose.prod.yml` with GHCR images so the server pulls images instead of building them.
 - GitHub Actions CD now builds/pushes app and nginx images to GHCR before deploying over SSH.
+- Worker services now disable startup migrations/seeders to prevent duplicate SQLite migration attempts during concurrent container startup.
 
 ## Known Gaps / Unknowns
 
