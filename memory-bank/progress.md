@@ -24,11 +24,14 @@ Memory Bank has been initialized based on the current Laravel/Twill backend stru
 - Seeders exist for cache and CV data.
 - PHPUnit configuration exists.
 - Vite/Laravel asset pipeline configuration exists.
+- Docker deployment files now exist for PHP-FPM, Nginx, a Laravel queue worker, and SQLite persistence.
+- `.env.docker.example` documents a production-style SQLite environment.
+- README now documents Docker deployment, SQLite setup, operational commands, and HTTPS reverse-proxy guidance.
+- Docker entrypoint now refuses startup when `APP_KEY` is missing to avoid unsafe automatic production key generation.
 
 ## Known Gaps / Unknowns
 
-- Project README is still the default Laravel README and does not document setup, APIs, or deployment.
-- No deployment procedure has been documented in the repository.
+- Exact production server/domain/reverse-proxy setup is still unknown.
 - The consuming frontend repository/application is not included here.
 - The exact production infrastructure, queue worker setup, storage disks, and media hosting setup are unknown.
 - Existing test coverage has not been inspected in detail.
@@ -43,10 +46,18 @@ Memory Bank has been initialized based on the current Laravel/Twill backend stru
   - `systemPatterns.md`
   - `techContext.md`
   - `progress.md`
+- Added Docker/Compose deployment support using SQLite:
+  - `Dockerfile`
+  - `docker-compose.yml`
+  - `.dockerignore`
+  - `.env.docker.example`
+  - `docker/app/entrypoint.sh`
+  - `docker/nginx/default.conf`
+- Replaced the default Laravel README with project-specific deployment documentation.
 
 ## Next Recommended Improvements
 
-- Add project-specific setup and API documentation to `README.md`.
-- Document deployment and queue worker requirements once known.
+- Finalize real production hostnames, mail settings, and HTTPS reverse-proxy configuration.
+- Consider adding API endpoint documentation to `README.md`.
 - Inspect and improve tests when making functional changes.
 - Keep Memory Bank updated after significant implementation work or when discovering new patterns.

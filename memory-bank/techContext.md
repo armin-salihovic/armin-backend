@@ -58,6 +58,17 @@ npm run dev
 npm run build
 ```
 
+Docker deployment commands:
+
+```bash
+cp .env.docker.example .env.docker
+docker compose build app
+docker compose up -d --build
+docker compose exec app php artisan migrate --force
+docker compose exec app php artisan db:seed --force
+docker compose restart worker
+```
+
 Twill-specific command observed in code:
 
 ```bash
@@ -78,7 +89,11 @@ php artisan twill:lqip
 - Twill conventions should be preserved for module controllers, repositories, models, media crops, files, blocks, slugs, repeaters, and settings.
 - Queue-backed jobs depend on queue worker/database queue setup in non-test environments.
 - Public API routes are domain-scoped to `config('app.url')`; local hosts matter.
-- README lacks project-specific setup details; rely on `.env.example`, composer/npm files, and code until documentation is added.
+- README now includes project-specific Docker deployment documentation, with local non-Docker setup notes.
+- Docker deployment is configured with PHP-FPM + Nginx + queue worker and SQLite at `/var/www/html/database/sqlite/database.sqlite` to avoid a separate database service.
+- Docker volumes persist `storage/` and `database/sqlite/`; production HTTPS is expected to be handled by a server-level reverse proxy such as Caddy, Traefik, Nginx Proxy Manager, or host Nginx/Certbot.
+- Route caching is intentionally not used in the Docker entrypoint because `routes/api.php` and `routes/web.php` currently contain closure routes.
+- The Docker entrypoint fails fast when `APP_KEY` is missing; it intentionally does not auto-generate keys because production keys must remain stable across restarts/deployments.
 
 ## Repository / Remote
 
