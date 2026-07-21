@@ -12,6 +12,9 @@ services:
       - app_sqlite:/var/www/html/database/sqlite
 
   worker:
+    build:
+      context: .
+      target: app
     image: armin-backend-app:latest
     restart: unless-stopped
     env_file:

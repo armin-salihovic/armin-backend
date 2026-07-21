@@ -19,7 +19,7 @@ Persistent Docker volumes are used for:
 - Laravel/Twill uploads and runtime storage: `app_storage`
 - SQLite database file: `app_sqlite`
 
-### First deployment
+### Local production-like test
 
 1. Copy the Docker environment template:
 
@@ -37,7 +37,7 @@ Persistent Docker volumes are used for:
    MAIL_PASSWORD=...
    ```
 
-3. Build the application image:
+3. Build the application image locally:
 
    ```bash
    docker compose build app
@@ -53,13 +53,40 @@ Persistent Docker volumes are used for:
 
    The Docker entrypoint intentionally refuses to start if `APP_KEY` is missing instead of generating one automatically.
 
-5. Start the stack:
+5. Start the local stack:
 
    ```bash
    docker compose up -d --build
    ```
 
 By default, Nginx is exposed at `http://localhost:8080` on the Docker host.
+
+### Server deployment with GitHub-built images
+
+Production servers should pull prebuilt images from GitHub Container Registry instead of building on the server.
+
+The GitHub Actions workflow publishes:
+
+- `ghcr.io/armin-salihovic/armin-backend-app:latest`
+- `ghcr.io/armin-salihovic/armin-backend-nginx:latest`
+- SHA-pinned variants for each image
+
+On the server, use the production Compose file:
+
+```bash
+docker compose -f docker-compose.prod.yml pull
+docker compose -f docker-compose.prod.yml up -d
+```
+
+The production Compose file does not contain `build:` sections, so no Composer, npm, or Docker image build work happens on the server.
+
+If the GHCR packages are private, authenticate on the server once:
+
+```bash
+echo YOUR_GITHUB_TOKEN | docker login ghcr.io -u YOUR_GITHUB_USERNAME --password-stdin
+```
+
+The token needs permission to read packages.
 
 The entrypoint automatically creates the SQLite file at:
 
@@ -141,7 +168,7 @@ ports:
   - "127.0.0.1:8080:80"
 ```
 
-Then configure your reverse proxy to forward your API/admin hostnames to `127.0.0.1:8080`.
+Then configure your reverse proxy to forward your API/admin hostnames to `127.0.0.1:8080`. The production Compose file already binds Nginx to `127.0.0.1:8080` so it is not directly exposed publicly.
 
 ## Important environment settings
 

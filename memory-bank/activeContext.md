@@ -16,6 +16,7 @@ Docker/Compose deployment support has been added for the Laravel/Twill backend u
 - API resources transform models into frontend-oriented JSON.
 - CMS save events dispatch `RefreshLQIP`, which runs `twill:lqip`.
 - Docker deployment uses PHP-FPM + Nginx + a Laravel queue worker, with SQLite stored at `/var/www/html/database/sqlite/database.sqlite`.
+- Production deployment uses GitHub Actions-built GHCR images and `docker-compose.prod.yml`, so the server pulls images instead of building them.
 - HTTPS is planned as a server-level reverse proxy concern rather than being baked into the app compose file.
 
 ## Active Decisions and Considerations
@@ -24,6 +25,7 @@ Docker/Compose deployment support has been added for the Laravel/Twill backend u
 - Future tasks should begin by reading all Memory Bank files, per `.clinerules/memory-bank.md`.
 - Any future project-specific setup details discovered should be added to `techContext.md` and/or README.
 - Docker keeps the app stack lightweight by avoiding MySQL/Postgres/Redis containers.
+- Keep `docker-compose.yml` for local builds/tests and `docker-compose.prod.yml` for server deployments with prebuilt images.
 - The queue worker remains part of Compose because Twill save events dispatch queued LQIP refresh jobs and the queue uses the SQLite-backed database driver.
 - Route caching should not be enabled until closure routes are refactored to controller methods.
 - `APP_KEY` should be generated once and set in `.env.docker`; the entrypoint should fail fast if it is missing rather than generating a new production key.
@@ -38,6 +40,6 @@ Docker/Compose deployment support has been added for the Laravel/Twill backend u
 
 ## Next Steps
 
-- Validate Docker build and Compose configuration.
+- Validate Docker build, production Compose configuration, and GitHub Actions workflow behavior.
 - Finalize production `.env.docker` values, especially `APP_KEY`, `APP_URL`, `ADMIN_APP_URL`, and mail settings.
 - Configure a server-level HTTPS reverse proxy when the target server/domain setup is known.

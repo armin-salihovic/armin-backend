@@ -64,6 +64,8 @@ Docker deployment commands:
 cp .env.docker.example .env.docker
 docker compose build app
 docker compose up -d --build
+docker compose -f docker-compose.prod.yml pull
+docker compose -f docker-compose.prod.yml up -d
 docker compose exec app php artisan migrate --force
 docker compose exec app php artisan db:seed --force
 docker compose restart worker
@@ -91,6 +93,8 @@ php artisan twill:lqip
 - Public API routes are domain-scoped to `config('app.url')`; local hosts matter.
 - README now includes project-specific Docker deployment documentation, with local non-Docker setup notes.
 - Docker deployment is configured with PHP-FPM + Nginx + queue worker and SQLite at `/var/www/html/database/sqlite/database.sqlite` to avoid a separate database service.
+- `docker-compose.yml` is intended for local production-like builds/tests; `docker-compose.prod.yml` is intended for servers and pulls prebuilt images from GHCR.
+- GitHub Actions builds and publishes app/nginx images to GitHub Container Registry, then deploys by SSH with `docker compose -f docker-compose.prod.yml pull` and `up -d`.
 - Docker volumes persist `storage/` and `database/sqlite/`; production HTTPS is expected to be handled by a server-level reverse proxy such as Caddy, Traefik, Nginx Proxy Manager, or host Nginx/Certbot.
 - Route caching is intentionally not used in the Docker entrypoint because `routes/api.php` and `routes/web.php` currently contain closure routes.
 - The Docker entrypoint fails fast when `APP_KEY` is missing; it intentionally does not auto-generate keys because production keys must remain stable across restarts/deployments.

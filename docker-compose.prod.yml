@@ -1,0 +1,35 @@
+services:
+  app:
+    image: ghcr.io/armin-salihovic/armin-backend-app:latest
+    restart: unless-stopped
+    env_file:
+      - .env.docker
+    volumes:
+      - app_storage:/var/www/html/storage
+      - app_sqlite:/var/www/html/database/sqlite
+
+  worker:
+    image: ghcr.io/armin-salihovic/armin-backend-app:latest
+    restart: unless-stopped
+    env_file:
+      - .env.docker
+    command: php artisan queue:work --sleep=3 --tries=3 --timeout=120
+    depends_on:
+      - app
+    volumes:
+      - app_storage:/var/www/html/storage
+      - app_sqlite:/var/www/html/database/sqlite
+
+  nginx:
+    image: ghcr.io/armin-salihovic/armin-backend-nginx:latest
+    restart: unless-stopped
+    depends_on:
+      - app
+    ports:
+      - "127.0.0.1:8080:80"
+    volumes:
+      - app_storage:/var/www/html/storage:ro
+
+volumes:
+  app_storage:
+  app_sqlite:

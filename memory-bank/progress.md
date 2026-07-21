@@ -28,6 +28,8 @@ Memory Bank has been initialized based on the current Laravel/Twill backend stru
 - `.env.docker.example` documents a production-style SQLite environment.
 - README now documents Docker deployment, SQLite setup, operational commands, and HTTPS reverse-proxy guidance.
 - Docker entrypoint now refuses startup when `APP_KEY` is missing to avoid unsafe automatic production key generation.
+- Production Compose deployment now uses `docker-compose.prod.yml` with GHCR images so the server pulls images instead of building them.
+- GitHub Actions CD now builds/pushes app and nginx images to GHCR before deploying over SSH.
 
 ## Known Gaps / Unknowns
 
@@ -53,6 +55,8 @@ Memory Bank has been initialized based on the current Laravel/Twill backend stru
   - `.env.docker.example`
   - `docker/app/entrypoint.sh`
   - `docker/nginx/default.conf`
+- Added `docker-compose.prod.yml` for server deployments using prebuilt GHCR images.
+- Updated `.github/workflows/cd.yml` to build/push Docker images and deploy with production Compose.
 - Replaced the default Laravel README with project-specific deployment documentation.
 
 ## Next Recommended Improvements
