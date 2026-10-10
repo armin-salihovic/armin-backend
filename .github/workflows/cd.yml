@@ -1,27 +1,96 @@
+
 name: Laravel App CD
 
 on:
   push:
-    branches: [ "main" ]
+    branches:
+      - main
+
+concurrency:
+  group: production-deployment
+  cancel-in-progress: false
 
 jobs:
   deploy:
+    name: Deploy Laravel
     runs-on: ubuntu-latest
 
     steps:
-    - name: SSH and deploy node app
-      uses: appleboy/ssh-action@master
-      with:
-        host: ${{ secrets.SSH_HOST }}
-        username: ${{ secrets.SSH_USERNAME }}
-        key: ${{ secrets.SSH_KEY }}
-        port: ${{ secrets.SSH_PORT }}
-        script: |
-          cd /var/www/armin-backend
-          git pull origin main
-          composer install
-          php artisan migrate
-          php artisan cache:clear
-          php artisan config:cache
-          php artisan route:cache
-          php artisan optimize
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_KEY }}
+          port: ${{ secrets.SSH_PORT }}
+          command_timeout: 10m
+
+          script: |
+            set -eu
+
+            cd /var/www/armin-backend
+
+            # New files inherit group-write permissions
+            umask 0002
+
+            echo "Pulling latest code..."
+            git pull --ff-only origin main
+
+            echo "Installing Composer dependencies..."
+            composer install \
+              --no-dev \
+              --prefer-dist \
+              --optimize-autoloader \
+              --no-interaction
+
+            echo "Preparing Laravel directories..."
+            mkdir -p \
+              storage/app/public/uploads \
+              storage/framework/cache/data \
+              storage/framework/sessions \
+              storage/framework/views \
+              storage/logs \
+              bootstrap/cache
+
+            # Ensure directories keep group inheritance
+            for dir in \
+              storage \
+              storage/app \
+              storage/app/public \
+              storage/app/public/uploads \
+              storage/framework \
+              storage/framework/cache \
+              storage/framework/cache/data \
+              storage/framework/sessions \
+              storage/framework/views \
+              storage/logs \
+              bootstrap/cache
+            do
+              chmod 2775 "$dir"
+            done
+
+            echo "Checking public storage link..."
+
+            if [ -L public/storage ]; then
+              # Verify it points to the correct directory
+              if [ "$(readlink -f public/storage)" != \
+                   "$(readlink -f storage/app/public)" ]; then
+                echo "ERROR: Incorrect storage symlink."
+                exit 1
+              fi
+            elif [ -e public/storage ]; then
+              echo "ERROR: public/storage is not a symlink."
+              echo "Refusing to overwrite existing files."
+              exit 1
+            else
+              php artisan storage:link
+            fi
+
+            echo "Running database migrations..."
+            php artisan migrate --force
+
+            echo "Rebuilding Laravel caches..."
+            php artisan optimize:clear
+            php artisan optimize
+
+            echo "Deployment completed successfully."
