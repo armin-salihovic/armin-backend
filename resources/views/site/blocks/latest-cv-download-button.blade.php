@@ -11,13 +11,14 @@
                        mr-2 3xl:mr-2.5 4xl:mr-4
                        mb-2 3xl:mb-2.5 4xl:mb-4
                        text-base font-bold
-                       bg-white text-black border border-black
+                       focus:outline-none
+                       bg-white dark:bg-[#181a1b]
+                       text-black dark:text-[#dddad6]
+                       border border-black dark:border-[#dddad6]
                        hover:bg-black hover:text-white
-                       dark:bg-black dark:text-white dark:border-white
-                       dark:hover:bg-white dark:hover:text-black
-                       focus:outline-none focus:z-10
-                       focus:ring-4 focus:ring-gray-200
-                       dark:focus:ring-gray-700
+                       dark:hover:bg-[#dddad6] dark:hover:text-[#181a1b]
+                       focus:z-10 focus:ring-4 focus:ring-gray-200
+                       dark:focus:ring-[#9e9589]
                        transition ease-in-out"
             >
                 {{ $block->input('title') }}
