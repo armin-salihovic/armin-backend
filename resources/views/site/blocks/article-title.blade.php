@@ -4,8 +4,8 @@
             <h3 class="text-lg md:text-5xl 3xl:text-6xl 4xl:text-8xl">{!! $block->input('year') !!}</h3>
         </aside>
         <div class="md:col-span-4 col-span-6 pr-0 xl:pr-32 3xl:pr-40 4xl:pr-64">
-            <h1 class="text-3xl md:text-5xl 3xl:text-6xl 4xl:text-8xl">{{ $block->input('title') }}</h1>
-            <h2 class="text-2xl md:text-4xl 3xl:text-5xl 4xl:text-7xl text-gray-500">{!! $block->input('subtitle') !!}</h2>
+            <h1 class="text-3xl md:text-5xl 3xl:text-6xl 4xl:text-8xl">{{ $block->translatedInput('title') }}</h1>
+            <h2 class="text-2xl md:text-4xl 3xl:text-5xl 4xl:text-7xl text-gray-500">{!! $block->translatedInput('subtitle') !!}</h2>
         </div>
     </div>
 </x-block-layout>

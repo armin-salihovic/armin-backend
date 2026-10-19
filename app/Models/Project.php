@@ -3,15 +3,22 @@
 namespace App\Models;
 
 use A17\Twill\Models\Behaviors\HasBlocks;
-use A17\Twill\Models\Behaviors\HasSlug;
 use A17\Twill\Models\Behaviors\HasMedias;
 use A17\Twill\Models\Behaviors\HasPosition;
+use A17\Twill\Models\Behaviors\HasSlug;
+use A17\Twill\Models\Behaviors\HasTranslation;
 use A17\Twill\Models\Behaviors\Sortable;
 use A17\Twill\Models\Model;
 
 class Project extends Model implements Sortable
 {
-    use HasBlocks, HasSlug, HasMedias, HasPosition;
+    use HasBlocks, HasSlug, HasMedias, HasPosition, HasTranslation;
+
+    public $translatedAttributes = [
+        'title',
+        'description',
+        'active',
+    ];
 
     protected $fillable = [
         'published',
@@ -41,7 +48,7 @@ class Project extends Model implements Sortable
             'og' => [
                 [
                     'name' => 'default',
-                    'ratio' => 1.91/1.0,
+                    'ratio' => 1.91 / 1.0,
                 ],
             ],
             'flexible' => [
@@ -70,6 +77,7 @@ class Project extends Model implements Sortable
     {
         $width = $this->imageAsArray($role, $crop)['width'];
         $height = $this->imageAsArray($role, $crop)['height'];
+
         return "$width/$height";
     }
 }

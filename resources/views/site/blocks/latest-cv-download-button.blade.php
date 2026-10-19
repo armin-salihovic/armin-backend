@@ -21,7 +21,7 @@
                        dark:focus:ring-[#9e9589]
                        transition ease-in-out"
             >
-                {{ $block->input('title') }}
+                {{ $block->translatedInput('title') }}
             </a>
         </div>
     </div>

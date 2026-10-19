@@ -4,9 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Resources\ProjectResource;
 use App\Http\Resources\ProjectResourceBasic;
-use App\Models\Project;
 use App\Repositories\ProjectRepository;
-use Illuminate\Http\Request;
 
 class ProjectController extends Controller
 {
@@ -15,16 +13,18 @@ class ProjectController extends Controller
         $this->repository = $repository;
     }
 
-    function index()
+    public function index()
     {
         return ProjectResourceBasic::collection($this->repository->allProjects());
     }
 
-    function show($slug)
+    public function show($slug)
     {
         $project = $this->repository->forSlug($slug);
 
-        if($project === null) return response()->json([], 404);
+        if ($project === null || ! $project->hasActiveTranslation(request()->attributes->get('locale', 'en'))) {
+            return response()->json([], 404);
+        }
 
         return new ProjectResource($project);
     }

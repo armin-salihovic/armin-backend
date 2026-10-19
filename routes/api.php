@@ -4,7 +4,6 @@ use App\Http\Controllers\MailController;
 use App\Http\Controllers\PageController;
 use App\Http\Controllers\ProjectController;
 use App\Models\Cache;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -34,15 +33,20 @@ Route::get('robots.txt', function () {
         ->header('Content-Type', 'text/plain');
 });
 
-Route::domain(config('app.url'))->group(function () {
-    Route::get('cache', function() {
+$apiHost = parse_url(config('app.url'), PHP_URL_HOST) ?: config('app.url');
+
+Route::domain($apiHost)->group(function () {
+    Route::get('cache', function () {
         $cache = Cache::first();
+
         return response()->json(['cache' => $cache->cache]);
     });
 
-    Route::get('projects', [ProjectController::class, 'index']);
-    Route::get('projects/{slug}', [ProjectController::class, 'show']);
+    Route::middleware('public.locale')->group(function () {
+        Route::get('projects', [ProjectController::class, 'index']);
+        Route::get('projects/{slug}', [ProjectController::class, 'show']);
+        Route::get('settings', [PageController::class, 'getSettings']);
+        Route::get('{slug}', [PageController::class, 'show']);
+    });
     Route::post('send-email', [MailController::class, 'sendEmail']);
-    Route::get('settings', [PageController::class, 'getSettings']);
-    Route::get('{slug}', [PageController::class, 'show']);
 });

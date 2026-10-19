@@ -15,20 +15,40 @@ class PageController extends Controller
         $this->repository = $repository;
     }
 
-    function show($slug)
+    public function show($slug)
     {
-        $project = $this->repository->forSlug($slug);
+        $page = $this->repository->forSlug($slug);
 
-        if ($project === null) return response()->json([], 404);
+        if ($page === null || ! $page->hasActiveTranslation(request()->attributes->get('locale', 'en'))) {
+            return response()->json([], 404);
+        }
 
-        return new PageResource($project);
+        return new PageResource($page);
     }
 
-    function getSettings()
+    public function getSettings()
     {
+        $locale = request()->attributes->get('locale', 'en');
+        $fallbackLocale = config('translatable.fallback_locale', 'en');
+        $locales = array_values(array_unique([$locale, $fallbackLocale]));
+
         $settings = Setting::where('section', 'settings')
-            ->join('setting_translations', 'settings.id', '=', 'setting_translations.setting_id')
-            ->pluck('value', 'key');
+            ->with(['translations' => function ($query) use ($locales) {
+                $query->whereIn('locale', $locales)->where('active', true);
+            }])
+            ->orderBy('id')
+            ->get()
+            ->mapWithKeys(function ($setting) use ($locale, $fallbackLocale) {
+                $translation = $setting->translations->firstWhere('locale', $locale);
+                $value = $translation ? $translation->value : null;
+
+                if ($value === null || $value === '') {
+                    $fallback = $setting->translations->firstWhere('locale', $fallbackLocale);
+                    $value = $fallback ? $fallback->value : null;
+                }
+
+                return [$setting->key => $value];
+            });
 
         return new SettingsResource(new Settings($settings));
     }

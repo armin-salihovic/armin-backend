@@ -4,12 +4,14 @@
 @formField('input', [
     'name' => 'title',
     'label' => 'Title',
+    'translated' => true,
     'maxlength' => 100
 ])
 
 @formField('wysiwyg', [
     'name' => 'paragraph',
     'label' => 'Text',
+    'translated' => true,
     'toolbarOptions' => [
         ['header' => [2, 3, 4, 5, 6, false]],
         [ 'color' => ['','#0062cc','#dc3545']],

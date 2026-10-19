@@ -17,6 +17,7 @@
     @formField('input', [
         'label' => 'Global Title',
         'name' => 'global_title',
+        'translated' => true,
     ])
 
     @formField('input', [
@@ -25,6 +26,7 @@
         'type' => 'textarea',
         'rows' => 2,
         'maxlength' => 200,
+        'translated' => true,
     ])
 @stop
 
@@ -59,11 +61,13 @@
         @formField('input', [
             'label' => 'Home title',
             'name' => 'home_title',
+            'translated' => true,
         ])
 
         @formField('input', [
             'label' => 'Home meta title',
             'name' => 'home_meta_title',
+            'translated' => true,
         ])
 
         @formField('input', [
@@ -72,6 +76,7 @@
             'type' => 'textarea',
             'rows' => 2,
             'maxlength' => 200,
+            'translated' => true,
         ])
 
         @formField('medias', [
@@ -86,11 +91,13 @@
     @formField('input', [
         'label' => 'Projects title',
         'name' => 'projects_title',
+        'translated' => true,
     ])
 
     @formField('input', [
         'label' => 'Projects meta title',
         'name' => 'projects_meta_title',
+        'translated' => true,
     ])
 
     @formField('input', [
@@ -99,6 +106,7 @@
         'type' => 'textarea',
         'rows' => 2,
         'maxlength' => 200,
+        'translated' => true,
     ])
 
     @formField('medias', [
@@ -113,11 +121,13 @@
     @formField('input', [
         'label' => 'About title',
         'name' => 'about_title',
+        'translated' => true,
     ])
 
     @formField('input', [
         'label' => 'About meta title',
         'name' => 'about_meta_title',
+        'translated' => true,
     ])
 
     @formField('input', [
@@ -126,6 +136,7 @@
         'type' => 'textarea',
         'rows' => 2,
         'maxlength' => 200,
+        'translated' => true,
     ])
 
     @formField('medias', [
@@ -140,11 +151,13 @@
     @formField('input', [
         'label' => 'Contact title',
         'name' => 'contact_title',
+        'translated' => true,
     ])
 
     @formField('input', [
         'label' => 'Contact meta title',
         'name' => 'contact_meta_title',
+        'translated' => true,
     ])
 
     @formField('input', [
@@ -153,6 +166,7 @@
         'type' => 'textarea',
         'rows' => 2,
         'maxlength' => 200,
+        'translated' => true,
     ])
 
     @formField('medias', [

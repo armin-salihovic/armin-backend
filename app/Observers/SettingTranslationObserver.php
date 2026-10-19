@@ -7,11 +7,24 @@ use App\Models\Cache;
 
 class SettingTranslationObserver
 {
-    public function updated(SettingTranslation $settingTranslation)
+    public function saved(SettingTranslation $settingTranslation)
     {
-        $cache = Cache::first();
-        $cache->update([
-            'cache' => uniqid(),
-        ]);
+        $this->invalidateSettingsCache();
+    }
+
+    public function deleted(SettingTranslation $settingTranslation)
+    {
+        $this->invalidateSettingsCache();
+    }
+
+    private function invalidateSettingsCache(): void
+    {
+        $cache = Cache::query()->first();
+
+        if ($cache) {
+            $cache->update([
+                'cache' => uniqid(),
+            ]);
+        }
     }
 }

@@ -3,14 +3,15 @@
 namespace App\Repositories;
 
 use A17\Twill\Repositories\Behaviors\HandleBlocks;
-use A17\Twill\Repositories\Behaviors\HandleSlugs;
 use A17\Twill\Repositories\Behaviors\HandleMedias;
+use A17\Twill\Repositories\Behaviors\HandleSlugs;
+use A17\Twill\Repositories\Behaviors\HandleTranslations;
 use A17\Twill\Repositories\ModuleRepository;
 use App\Models\Project;
 
 class ProjectRepository extends ModuleRepository
 {
-    use HandleBlocks, HandleSlugs, HandleMedias;
+    use HandleBlocks, HandleSlugs, HandleMedias, HandleTranslations;
 
     public function __construct(Project $model)
     {
@@ -19,10 +20,20 @@ class ProjectRepository extends ModuleRepository
 
     public function allProjects()
     {
-        $news = $this->model->published()->orderBy('position')->latest();
+        $locale = app()->getLocale();
+        $news = $this->model->published()
+            ->whereHas('translations', function ($query) use ($locale) {
+                $query->where('locale', $locale)->where('active', true);
+            })
+            ->orderBy('position')
+            ->latest();
 
-        if($search = request('search')) {
-            $news->where('title', 'like', '%' . $search . '%');
+        if ($search = request('search')) {
+            $news->whereHas('translations', function ($query) use ($locale, $search) {
+                $query->where('locale', $locale)
+                    ->where('active', true)
+                    ->where('title', 'like', '%'.$search.'%');
+            });
         }
 
         return $news->get();
@@ -30,14 +41,60 @@ class ProjectRepository extends ModuleRepository
 
     public function afterSave($object, $fields)
     {
+        $fields = $this->useEnglishSlugForEveryLocale($object, $fields);
         $this->updateRepeater($object, $fields, 'technologies', 'ProjectTechnology', 'project-technology');
         parent::afterSave($object, $fields);
+
+        $this->synchronizeLocaleSlugs($object);
+    }
+
+    private function useEnglishSlugForEveryLocale($object, array $fields): array
+    {
+        if (! isset($fields['slug']) || ! is_array($fields['slug'])) {
+            return $fields;
+        }
+
+        $slug = $fields['slug']['en'] ?? $object->getSlug('en');
+        if (! $slug) {
+            return $fields;
+        }
+
+        foreach (getLocales() as $locale) {
+            $fields['slug'][$locale] = $slug;
+        }
+
+        return $fields;
+    }
+
+    private function synchronizeLocaleSlugs($object): void
+    {
+        $englishSlug = $object->slugs()->where('locale', 'en')->orderByDesc('active')->orderByDesc('id')->value('slug');
+
+        if (! $englishSlug) {
+            return;
+        }
+
+        foreach (getLocales() as $locale) {
+            $translation = $object->translate($locale);
+            if (! $translation) {
+                continue;
+            }
+
+            $object->disableLocaleSlugs($locale);
+            $object->unsetRelation('slugs');
+            $object->updateOrNewSlug([
+                'slug' => $englishSlug,
+                'locale' => $locale,
+                'active' => (bool) $translation->active,
+            ]);
+        }
     }
 
     public function getFormFields($object)
     {
         $fields = parent::getFormFields($object);
         $fields = $this->getFormFieldsForRepeater($object, $fields, 'technologies', 'ProjectTechnology', 'project-technology');
+
         return $fields;
     }
 

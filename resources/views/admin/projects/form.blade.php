@@ -7,6 +7,7 @@
         'type' => 'textarea',
         'rows' => 2,
         'maxlength' => 200,
+        'translated' => true,
     ])
 
     @formField('medias', [
