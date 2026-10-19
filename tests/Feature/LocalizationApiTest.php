@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use A17\Twill\Models\Translations\SettingTranslation;
+use A17\Twill\Models\Setting;
 use App\Models\Cache;
 use App\Models\Page;
 use App\Models\Project;
@@ -11,6 +12,7 @@ use App\Repositories\ProjectRepository;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Routing\Route;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Tests\TestCase;
 
 class LocalizationApiTest extends TestCase
@@ -131,12 +133,17 @@ class LocalizationApiTest extends TestCase
         $globalTitle = $this->createSetting('global_title', ['en' => 'Armin Portfolio', 'de' => 'Armin Portfolio DE']);
         $metaTitle = $this->createSetting('projects_meta_title', ['en' => 'Projects', 'de' => 'Projekte']);
         $this->createSetting('home_meta_description', ['en' => 'English description']);
+        $inactiveDescription = $this->createSetting('projects_meta_description', ['en' => 'English project description', 'de' => 'Inactive German description']);
+        DB::table('setting_translations')->where('setting_id', $inactiveDescription)->where('locale', 'de')->update(['active' => false]);
+        $this->createSetting('about_meta_description', ['en' => 'English about description', 'de' => '']);
         $cache = Cache::create(['cache' => 'before']);
 
         $german = $this->apiGet('/settings?locale=de');
         $german->assertOk()
             ->assertJsonPath('projects_meta_title', 'Projekte | Armin Portfolio DE')
-            ->assertJsonPath('home_meta_description', 'English description');
+            ->assertJsonPath('home_meta_description', 'English description')
+            ->assertJsonPath('projects_meta_description', 'English project description')
+            ->assertJsonPath('about_meta_description', 'English about description');
 
         $english = $this->apiGet('/settings');
         $english->assertOk()->assertJsonPath('projects_meta_title', 'Projects | Armin Portfolio');
@@ -157,6 +164,74 @@ class LocalizationApiTest extends TestCase
         $this->assertSame($globalTitle, DB::table('settings')->where('key', 'global_title')->value('id'));
     }
 
+    public function test_creating_saving_and_deleting_setting_translations_invalidate_the_shared_cache(): void
+    {
+        $settingId = DB::table('settings')->insertGetId([
+            'key' => 'social_github',
+            'section' => 'settings',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        $cache = Cache::create(['cache' => 'initial']);
+        $setting = Setting::findOrFail($settingId);
+
+        $translation = $setting->translations()->create([
+            'locale' => 'en',
+            'value' => 'https://github.example/profile',
+            'active' => true,
+        ]);
+        $this->assertNotSame('initial', $cache->fresh()->cache);
+
+        $afterCreate = $cache->fresh()->cache;
+        $translation->update(['value' => 'https://github.example/updated']);
+        $this->assertNotSame($afterCreate, $cache->fresh()->cache);
+
+        DB::table('caches')->where('id', $cache->id)->update(['cache' => 'before-delete']);
+        $translation->delete();
+        $this->assertNotSame('before-delete', $cache->fresh()->cache);
+    }
+
+    public function test_shared_social_and_image_settings_use_the_english_value_for_both_locales(): void
+    {
+        $this->createSetting('global_title', ['en' => 'Portfolio']);
+        $this->createSetting('social_github', ['en' => 'https://github.example/profile']);
+        $faviconId = $this->createSetting('favicon', ['en' => 'shared icon']);
+        $now = now();
+        $mediaId = DB::table('medias')->insertGetId([
+            'uuid' => 'local/shared-favicon.png',
+            'alt_text' => null,
+            'width' => 32,
+            'height' => 32,
+            'caption' => null,
+            'filename' => 'shared-favicon.png',
+            'created_at' => $now,
+            'updated_at' => $now,
+        ]);
+        DB::table('mediables')->insert([
+            'mediable_id' => $faviconId,
+            'mediable_type' => Setting::class,
+            'media_id' => $mediaId,
+            'crop_x' => 0,
+            'crop_y' => 0,
+            'crop_w' => 32,
+            'crop_h' => 32,
+            'metadatas' => '{}',
+            'role' => 'favicon',
+            'crop' => 'default',
+            'created_at' => $now,
+            'updated_at' => $now,
+        ]);
+
+        $english = $this->apiGet('/settings');
+        $german = $this->apiGet('/settings?locale=de');
+
+        $english->assertOk();
+        $german->assertOk();
+        $this->assertSame($english->json('social_github'), $german->json('social_github'));
+        $this->assertSame($english->json('favicon'), $german->json('favicon'));
+        $this->assertNotEmpty($english->json('favicon'));
+    }
+
     public function test_unsupported_locale_returns_a_consistent_bad_request(): void
     {
         $this->apiGet('/settings?locale=fr')->assertStatus(400)->assertExactJson([
@@ -165,6 +240,163 @@ class LocalizationApiTest extends TestCase
                 'locale' => ['The selected locale is invalid.'],
             ],
         ]);
+    }
+
+    public function test_array_locale_is_rejected_and_request_locale_is_restored_after_each_request(): void
+    {
+        $this->createPage('home', 'English home', 'Deutsche Startseite', true, null);
+
+        $this->apiGet('/home?locale%5B%5D=de')->assertStatus(400)->assertExactJson([
+            'message' => 'Unsupported locale.',
+            'errors' => [
+                'locale' => ['The selected locale is invalid.'],
+            ],
+        ]);
+
+        $this->apiGet('/home?locale=de')->assertOk()->assertJsonPath('data.title', 'Deutsche Startseite');
+        $this->assertSame(config('app.locale'), app()->getLocale());
+        $this->apiGet('/home')->assertOk()->assertJsonPath('data.title', 'English home');
+        $this->assertSame(config('app.locale'), app()->getLocale());
+    }
+
+    public function test_page_and_project_slugs_stay_synchronized_across_edits_and_publication_changes(): void
+    {
+        $publishedLanguages = [
+            ['value' => 'en', 'published' => true],
+            ['value' => 'de', 'published' => true],
+        ];
+        $pageRepository = app(PageRepository::class);
+        $projectRepository = app(ProjectRepository::class);
+        $page = $pageRepository->create([
+            'title' => ['en' => 'Old English page', 'de' => 'Alte deutsche Seite'],
+            'slug' => ['en' => 'old-page', 'de' => 'deutsche-seite'],
+            'published' => true,
+            'position' => 1,
+            'languages' => $publishedLanguages,
+        ]);
+        $project = $projectRepository->create([
+            'title' => ['en' => 'Old English project', 'de' => 'Altes deutsches Projekt'],
+            'description' => ['en' => 'English description', 'de' => 'Deutsche Beschreibung'],
+            'slug' => ['en' => 'old-project', 'de' => 'deutsches-projekt'],
+            'published' => true,
+            'position' => 1,
+            'languages' => $publishedLanguages,
+        ]);
+        $pageRepository->update($page->id, [
+            'title' => ['en' => 'Old English page', 'de' => 'Bearbeitete deutsche Seite'],
+            'slug' => ['en' => 'old-page', 'de' => 'localized-page-must-be-ignored'],
+            'published' => true,
+            'position' => 1,
+            'languages' => $publishedLanguages,
+        ]);
+        $projectRepository->update($project->id, [
+            'title' => ['en' => 'Old English project', 'de' => 'Bearbeitetes deutsches Projekt'],
+            'description' => ['en' => 'English description', 'de' => 'Aktualisierte Beschreibung'],
+            'slug' => ['en' => 'old-project', 'de' => 'localized-project-must-be-ignored'],
+            'published' => true,
+            'position' => 1,
+            'languages' => $publishedLanguages,
+        ]);
+
+        $this->assertActiveLocaleSlugs('page_slugs', 'page_id', $page->id, 'old-page', ['en', 'de']);
+        $this->assertActiveLocaleSlugs('project_slugs', 'project_id', $project->id, 'old-project', ['en', 'de']);
+        $this->apiGet('/old-page')->assertOk()->assertJsonPath('data.title', 'Old English page');
+        $this->apiGet('/old-page?locale=de')->assertOk()->assertJsonPath('data.title', 'Bearbeitete deutsche Seite');
+
+        $pageRepository->update($page->id, [
+            'title' => ['en' => 'New English page', 'de' => 'Bearbeitete deutsche Seite'],
+            'slug' => ['en' => 'new-page', 'de' => 'another-localized-page'],
+            'published' => true,
+            'position' => 1,
+            'languages' => $publishedLanguages,
+        ]);
+        $projectRepository->update($project->id, [
+            'title' => ['en' => 'New English project', 'de' => 'Bearbeitetes deutsches Projekt'],
+            'description' => ['en' => 'English description', 'de' => 'Aktualisierte Beschreibung'],
+            'slug' => ['en' => 'new-project', 'de' => 'another-localized-project'],
+            'published' => true,
+            'position' => 1,
+            'languages' => $publishedLanguages,
+        ]);
+
+        $this->assertActiveLocaleSlugs('page_slugs', 'page_id', $page->id, 'new-page', ['en', 'de']);
+        $this->assertActiveLocaleSlugs('project_slugs', 'project_id', $project->id, 'new-project', ['en', 'de']);
+        $this->assertSame(0, DB::table('page_slugs')->where('page_id', $page->id)->where('slug', 'old-page')->where('active', true)->count());
+        $this->assertSame(0, DB::table('project_slugs')->where('project_id', $project->id)->where('slug', 'old-project')->where('active', true)->count());
+        $this->apiGet('/old-page')->assertOk()->assertJsonPath('data.title', 'New English page');
+        $oldProject = $projectRepository->forSlug('old-project');
+        $this->assertNotNull($oldProject);
+        $this->assertTrue($oldProject->redirect);
+        $previousLocale = app()->getLocale();
+        try {
+            app()->setLocale('de');
+            $oldGermanProject = $projectRepository->forSlug('old-project');
+            $this->assertNotNull($oldGermanProject);
+            $this->assertTrue($oldGermanProject->redirect);
+        } finally {
+            app()->setLocale($previousLocale);
+        }
+
+        $unpublishedGermanLanguages = [
+            ['value' => 'en', 'published' => true],
+            ['value' => 'de', 'published' => false],
+        ];
+        $pageRepository->update($page->id, [
+            'title' => ['en' => 'New English page', 'de' => 'Bearbeitete deutsche Seite'],
+            'slug' => ['en' => 'new-page', 'de' => 'new-page'],
+            'published' => true,
+            'position' => 1,
+            'languages' => $unpublishedGermanLanguages,
+        ]);
+        $projectRepository->update($project->id, [
+            'title' => ['en' => 'New English project', 'de' => 'Bearbeitetes deutsches Projekt'],
+            'description' => ['en' => 'English description', 'de' => 'Aktualisierte Beschreibung'],
+            'slug' => ['en' => 'new-project', 'de' => 'new-project'],
+            'published' => true,
+            'position' => 1,
+            'languages' => $unpublishedGermanLanguages,
+        ]);
+        $this->assertActiveLocaleSlugs('page_slugs', 'page_id', $page->id, 'new-page', ['en']);
+        $this->assertActiveLocaleSlugs('project_slugs', 'project_id', $project->id, 'new-project', ['en']);
+        $this->apiGet('/new-page?locale=de')->assertNotFound();
+        $this->apiGet('/projects/new-project?locale=de')->assertNotFound();
+        $previousLocale = app()->getLocale();
+        try {
+            app()->setLocale('de');
+            $unpublishedGermanProject = $projectRepository->forSlug('new-project');
+            $this->assertNotNull($unpublishedGermanProject);
+            $this->assertFalse($unpublishedGermanProject->hasActiveTranslation('de'));
+        } finally {
+            app()->setLocale($previousLocale);
+        }
+
+        $pageRepository->update($page->id, [
+            'title' => ['en' => 'New English page', 'de' => 'Bearbeitete deutsche Seite'],
+            'slug' => ['en' => 'new-page', 'de' => 'new-page'],
+            'published' => true,
+            'position' => 1,
+            'languages' => $publishedLanguages,
+        ]);
+        $projectRepository->update($project->id, [
+            'title' => ['en' => 'New English project', 'de' => 'Bearbeitetes deutsches Projekt'],
+            'description' => ['en' => 'English description', 'de' => 'Aktualisierte Beschreibung'],
+            'slug' => ['en' => 'new-project', 'de' => 'new-project'],
+            'published' => true,
+            'position' => 1,
+            'languages' => $publishedLanguages,
+        ]);
+        $this->assertActiveLocaleSlugs('page_slugs', 'page_id', $page->id, 'new-page', ['en', 'de']);
+        $this->assertActiveLocaleSlugs('project_slugs', 'project_id', $project->id, 'new-project', ['en', 'de']);
+        $this->apiGet('/new-page?locale=de')->assertOk();
+        $previousLocale = app()->getLocale();
+        try {
+            app()->setLocale('de');
+            $rePublishedProject = $projectRepository->forSlug('new-project');
+            $this->assertNotNull($rePublishedProject);
+            $this->assertTrue($rePublishedProject->hasActiveTranslation('de'));
+        } finally {
+            app()->setLocale($previousLocale);
+        }
     }
 
     public function test_migration_backfills_existing_english_rows_without_removing_legacy_content(): void
@@ -208,6 +440,137 @@ class LocalizationApiTest extends TestCase
         $content = json_decode(DB::table('blocks')->where('blockable_id', $pageId)->value('content'), true);
         $this->assertSame('Legacy heading', $content['title']['en']);
         $this->assertSame('<p>Legacy block</p>', $content['paragraph']['en']);
+    }
+
+    public function test_translation_migrations_round_trip_legacy_blocks_nested_blocks_and_page_revisions(): void
+    {
+        $contentMigration = require database_path('migrations/2026_10_19_000000_add_page_and_project_translations.php');
+        $revisionMigration = require database_path('migrations/2026_10_20_000000_backfill_page_revision_block_translations.php');
+        $contentMigration->down();
+
+        $now = now();
+        $pageId = DB::table('pages')->insertGetId([
+            'title' => 'Legacy revision page',
+            'published' => true,
+            'position' => 1,
+            'created_at' => $now,
+            'updated_at' => $now,
+        ]);
+        $projectId = DB::table('projects')->insertGetId([
+            'title' => 'Legacy revision project',
+            'description' => 'Legacy project description',
+            'published' => true,
+            'position' => 1,
+            'created_at' => $now,
+            'updated_at' => $now,
+        ]);
+        $parentBlockId = DB::table('blocks')->insertGetId([
+            'blockable_id' => $pageId,
+            'blockable_type' => Page::class,
+            'position' => 1,
+            'content' => json_encode(['title' => 'Legacy heading', 'paragraph' => '<p>Legacy parent</p>']),
+            'type' => 'paragraph',
+            'child_key' => null,
+            'parent_id' => null,
+            'editor_name' => 'default',
+        ]);
+        $nestedBlockId = DB::table('blocks')->insertGetId([
+            'blockable_id' => $pageId,
+            'blockable_type' => Page::class,
+            'position' => 2,
+            'content' => json_encode(['paragraph1' => '<p>Legacy nested one</p>', 'paragraph2' => '<p>Legacy nested two</p>']),
+            'type' => 'double-paragraph',
+            'child_key' => 'nested-content',
+            'parent_id' => $parentBlockId,
+            'editor_name' => 'default',
+        ]);
+        $revisionPayload = [
+            'title' => 'Legacy revision page',
+            'blocks' => [
+                [
+                    'type' => 'a17-block-paragraph',
+                    'content' => ['title' => 'Revision heading', 'paragraph' => '<p>Revision parent</p>'],
+                    'blocks' => [[
+                        'type' => 'a17-block-double-paragraph',
+                        'content' => ['paragraph1' => '<p>Revision nested one</p>', 'paragraph2' => '<p>Revision nested two</p>'],
+                    ]],
+                ],
+                [
+                    'type' => 'a17-block-article-paragraph-h3',
+                    'content' => ['title' => 'Article section', 'paragraph' => '<p>Article body</p>'],
+                ],
+                [
+                    'type' => 'a17-block-article-title',
+                    'content' => ['title' => 'Article title', 'subtitle' => 'Article subtitle'],
+                ],
+                [
+                    'type' => 'a17-block-article-introduction',
+                    'content' => ['title' => 'Introduction title', 'paragraph' => '<p>Introduction body</p>'],
+                ],
+                [
+                    'type' => 'a17-block-file-download-button',
+                    'content' => ['title' => 'Download file'],
+                ],
+                [
+                    'type' => 'a17-block-latest-cv-download-button',
+                    'content' => ['title' => 'Download CV'],
+                ],
+                [
+                    'type' => 'a17-block-paragraph',
+                    'content' => [
+                        'title' => ['en' => 'Existing English', 'de' => 'Vorhandenes Deutsch'],
+                        'paragraph' => '<p>Legacy paragraph</p>',
+                    ],
+                ],
+            ],
+        ];
+        $revisionId = DB::table('page_revisions')->insertGetId([
+            'page_id' => $pageId,
+            'user_id' => null,
+            'payload' => json_encode($revisionPayload),
+            'created_at' => $now,
+            'updated_at' => $now,
+        ]);
+
+        $contentMigration->up();
+        $this->assertSame('Legacy revision page', DB::table('page_translations')->where('page_id', $pageId)->where('locale', 'en')->value('title'));
+        $parentContent = json_decode(DB::table('blocks')->where('id', $parentBlockId)->value('content'), true);
+        $nestedContent = json_decode(DB::table('blocks')->where('id', $nestedBlockId)->value('content'), true);
+        $this->assertSame('<p>Legacy parent</p>', $parentContent['paragraph']['en']);
+        $this->assertSame('<p>Legacy nested one</p>', $nestedContent['paragraph1']['en']);
+
+        $revisionMigration->up();
+        $revisionMigration->up();
+        $localizedRevision = json_decode(DB::table('page_revisions')->where('id', $revisionId)->value('payload'), true);
+        $this->assertSame('<p>Revision parent</p>', $localizedRevision['blocks'][0]['content']['paragraph']['en']);
+        $this->assertSame('<p>Revision nested two</p>', $localizedRevision['blocks'][0]['blocks'][0]['content']['paragraph2']['en']);
+        $this->assertSame(['en'], array_keys($localizedRevision['blocks'][0]['content']['paragraph']));
+        $this->assertSame('Article section', $localizedRevision['blocks'][1]['content']['title']['en']);
+        $this->assertSame('<p>Article body</p>', $localizedRevision['blocks'][1]['content']['paragraph']['en']);
+        $this->assertSame('Article title', $localizedRevision['blocks'][2]['content']['title']['en']);
+        $this->assertSame('Article subtitle', $localizedRevision['blocks'][2]['content']['subtitle']['en']);
+        $this->assertSame('Introduction title', $localizedRevision['blocks'][3]['content']['title']['en']);
+        $this->assertSame('<p>Introduction body</p>', $localizedRevision['blocks'][3]['content']['paragraph']['en']);
+        $this->assertSame('Download file', $localizedRevision['blocks'][4]['content']['title']['en']);
+        $this->assertSame('Download CV', $localizedRevision['blocks'][5]['content']['title']['en']);
+        $this->assertSame(['en' => 'Existing English', 'de' => 'Vorhandenes Deutsch'], $localizedRevision['blocks'][6]['content']['title']);
+
+        $revisionMigration->down();
+        $legacyRevision = json_decode(DB::table('page_revisions')->where('id', $revisionId)->value('payload'), true);
+        $this->assertSame('<p>Revision parent</p>', $legacyRevision['blocks'][0]['content']['paragraph']);
+        $this->assertSame('<p>Revision nested two</p>', $legacyRevision['blocks'][0]['blocks'][0]['content']['paragraph2']);
+        $this->assertSame(['en' => 'Existing English', 'de' => 'Vorhandenes Deutsch'], $legacyRevision['blocks'][6]['content']['title']);
+
+        $contentMigration->down();
+        $this->assertFalse(Schema::hasTable('page_translations'));
+        $this->assertSame('Legacy revision project', DB::table('projects')->where('id', $projectId)->value('title'));
+        $legacyParentContent = json_decode(DB::table('blocks')->where('id', $parentBlockId)->value('content'), true);
+        $legacyNestedContent = json_decode(DB::table('blocks')->where('id', $nestedBlockId)->value('content'), true);
+        $this->assertSame('<p>Legacy parent</p>', $legacyParentContent['paragraph']);
+        $this->assertSame('<p>Legacy nested one</p>', $legacyNestedContent['paragraph1']);
+
+        $contentMigration->up();
+        $revisionMigration->up();
     }
 
     public function test_twill_repositories_persist_and_return_page_and_project_translations(): void
@@ -437,4 +800,28 @@ class LocalizationApiTest extends TestCase
 
         return $id;
     }
+
+    private function assertActiveLocaleSlugs(string $table, string $foreignKey, int $id, string $slug, array $activeLocales): void
+    {
+        foreach (['en', 'de'] as $locale) {
+            $activeSlugs = DB::table($table)
+                ->where($foreignKey, $id)
+                ->where('locale', $locale)
+                ->where('active', true)
+                ->pluck('slug');
+
+            if (in_array($locale, $activeLocales, true)) {
+                $this->assertCount(1, $activeSlugs);
+                $this->assertSame($slug, $activeSlugs->first());
+                $this->assertSame(1, DB::table($table)
+                    ->where('locale', $locale)
+                    ->where('slug', $slug)
+                    ->where('active', true)
+                    ->count());
+            } else {
+                $this->assertCount(0, $activeSlugs);
+            }
+        }
+    }
+
 }
