@@ -4,6 +4,8 @@ The frontend at `https://www.armin.ba/sitemap.xml` is the single public sitemap.
 
 The backend production deploy removes the ignored legacy artifact at `public/sitemap.xml`. It is not tracked by Git, so removing the command alone would not remove a previously generated file from the deployed public directory.
 
+The repository includes a Laravel `robots.txt` route and the two source files it returns, but it does not include the production Nginx configuration. The feature test checks those repository-owned source files; verify the live `/robots.txt` URL after deployment to cover any web-server routing in production.
+
 After the backend deploy, verify on the backend host:
 
 ```sh

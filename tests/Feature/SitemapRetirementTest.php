@@ -16,13 +16,18 @@ class SitemapRetirementTest extends TestCase
         $this->get('/sitemap.xml')->assertNotFound();
     }
 
-    public function test_robots_response_does_not_advertise_a_sitemap(): void
+    public function test_backend_robots_source_files_do_not_advertise_a_sitemap(): void
     {
-        $response = $this->get('/robots.txt');
+        foreach (['robots-api.txt', 'robots-admin.txt'] as $robotsFile) {
+            $path = public_path($robotsFile);
 
-        $response->assertOk();
-        $this->assertStringStartsWith('text/plain', $response->headers->get('Content-Type'));
-        $this->assertStringNotContainsStringIgnoringCase('sitemap:', $response->getContent());
+            $this->assertFileExists($path);
+
+            $contents = file_get_contents($path);
+
+            $this->assertIsString($contents);
+            $this->assertStringNotContainsStringIgnoringCase('sitemap:', $contents);
+        }
     }
 
     public function test_sitemap_generator_is_not_registered_or_scheduled(): void
