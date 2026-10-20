@@ -358,6 +358,10 @@ class LocalizationApiTest extends TestCase
         ]);
         $this->assertActiveLocaleSlugs('page_slugs', 'page_id', $page->id, 'new-page', ['en']);
         $this->assertActiveLocaleSlugs('project_slugs', 'project_id', $project->id, 'new-project', ['en']);
+        $pageFields = $pageRepository->getFormFields($pageRepository->getById($page->id));
+        $projectFields = $projectRepository->getFormFields($projectRepository->getById($project->id));
+        $this->assertSame('new-page', $pageFields['translations']['slug']['de'] ?? null);
+        $this->assertSame('new-project', $projectFields['translations']['slug']['de'] ?? null);
         $this->apiGet('/new-page?locale=de')->assertNotFound();
         $this->apiGet('/projects/new-project?locale=de')->assertNotFound();
         $previousLocale = app()->getLocale();
@@ -619,6 +623,68 @@ class LocalizationApiTest extends TestCase
         ]);
         $this->assertTrue($draftPage->fresh()->hasActiveTranslation('en'));
         $this->assertFalse($draftPage->fresh()->hasActiveTranslation('de'));
+    }
+
+    public function test_admin_form_hydrates_the_shared_slug_when_translated_project_titles_match(): void
+    {
+        $projectRepository = app(ProjectRepository::class);
+        $project = $projectRepository->create([
+            'title' => ['en' => 'x', 'de' => 'x'],
+            'description' => ['en' => 'English', 'de' => 'Deutsch'],
+            'slug' => ['en' => 'x', 'de' => 'x'],
+            'published' => true,
+            'position' => 1,
+            'languages' => [
+                ['value' => 'en', 'published' => true],
+                ['value' => 'de', 'published' => true],
+            ],
+        ]);
+        $fresh = $projectRepository->getById($project->id);
+        $fields = $projectRepository->getFormFields($fresh);
+
+        $this->assertSame('x', $fresh->translate('en')->title);
+        $this->assertSame('x', $fresh->translate('de')->title);
+        $this->assertSame('x', $fields['translations']['slug']['en'] ?? null);
+        $this->assertSame('x', $fields['translations']['slug']['de'] ?? null);
+        $this->assertActiveLocaleSlugs('project_slugs', 'project_id', $project->id, 'x', ['en', 'de']);
+    }
+
+    public function test_admin_forms_hydrate_the_shared_english_slug_for_different_project_titles_and_pages(): void
+    {
+        $languages = [
+            ['value' => 'en', 'published' => true],
+            ['value' => 'de', 'published' => true],
+        ];
+        $projectRepository = app(ProjectRepository::class);
+        $project = $projectRepository->create([
+            'title' => ['en' => 'x', 'de' => 'y'],
+            'description' => ['en' => 'English', 'de' => 'Deutsch'],
+            'slug' => ['en' => 'x', 'de' => 'y'],
+            'published' => true,
+            'position' => 2,
+            'languages' => $languages,
+        ]);
+        $projectFields = $projectRepository->getFormFields($projectRepository->getById($project->id));
+
+        $this->assertSame('x', $projectFields['translations']['title']['en']);
+        $this->assertSame('y', $projectFields['translations']['title']['de']);
+        $this->assertSame('x', $projectFields['translations']['slug']['en'] ?? null);
+        $this->assertSame('x', $projectFields['translations']['slug']['de'] ?? null);
+        $this->assertActiveLocaleSlugs('project_slugs', 'project_id', $project->id, 'x', ['en', 'de']);
+
+        $pageRepository = app(PageRepository::class);
+        $page = $pageRepository->create([
+            'title' => ['en' => 'Page title', 'de' => 'Seitentitel'],
+            'slug' => ['en' => 'page-title', 'de' => 'seitentitel'],
+            'published' => true,
+            'position' => 1,
+            'languages' => $languages,
+        ]);
+        $pageFields = $pageRepository->getFormFields($pageRepository->getById($page->id));
+
+        $this->assertSame('page-title', $pageFields['translations']['slug']['en'] ?? null);
+        $this->assertSame('page-title', $pageFields['translations']['slug']['de'] ?? null);
+        $this->assertActiveLocaleSlugs('page_slugs', 'page_id', $page->id, 'page-title', ['en', 'de']);
     }
 
     private function createPage(string $slug, string $englishTitle, ?string $germanTitle, bool $germanActive, ?array $blockContent): int

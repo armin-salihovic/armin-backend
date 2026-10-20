@@ -29,6 +29,32 @@ class PageRepository extends ModuleRepository
         $this->synchronizeLocaleSlugs($object);
     }
 
+    public function getFormFields($object)
+    {
+        $fields = parent::getFormFields($object);
+
+        return $this->hydrateSharedSlugFormFields($object, $fields);
+    }
+
+    private function hydrateSharedSlugFormFields($object, array $fields): array
+    {
+        $englishSlug = $object->slugs()
+            ->where('locale', 'en')
+            ->orderByDesc('active')
+            ->orderByDesc('id')
+            ->value('slug');
+
+        if ($englishSlug === null || $englishSlug === '') {
+            return $fields;
+        }
+
+        foreach (getLocales() as $locale) {
+            $fields['translations']['slug'][$locale] = $englishSlug;
+        }
+
+        return $fields;
+    }
+
     private function useEnglishSlugForEveryLocale($object, array $fields): array
     {
         if (! isset($fields['slug']) || ! is_array($fields['slug'])) {

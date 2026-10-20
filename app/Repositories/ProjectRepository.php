@@ -95,6 +95,25 @@ class ProjectRepository extends ModuleRepository
         $fields = parent::getFormFields($object);
         $fields = $this->getFormFieldsForRepeater($object, $fields, 'technologies', 'ProjectTechnology', 'project-technology');
 
+        return $this->hydrateSharedSlugFormFields($object, $fields);
+    }
+
+    private function hydrateSharedSlugFormFields($object, array $fields): array
+    {
+        $englishSlug = $object->slugs()
+            ->where('locale', 'en')
+            ->orderByDesc('active')
+            ->orderByDesc('id')
+            ->value('slug');
+
+        if ($englishSlug === null || $englishSlug === '') {
+            return $fields;
+        }
+
+        foreach (getLocales() as $locale) {
+            $fields['translations']['slug'][$locale] = $englishSlug;
+        }
+
         return $fields;
     }
 
