@@ -93,4 +93,7 @@ jobs:
             php artisan optimize:clear
             php artisan optimize
 
+            echo "Removing the retired generated sitemap..."
+            rm -f public/sitemap.xml
+
             echo "Deployment completed successfully."
